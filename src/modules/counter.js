@@ -20,6 +20,13 @@ export default (state = initialState, action) => {
       payload : action.payload
     }
 
+    case 'NOTE_CHANGE':
+    //console.log(action)
+    return {
+      ...state,
+      notes : [...action.payload]
+    }
+
     case INCREMENT_REQUESTED:
     return {
       ...state,
@@ -59,6 +66,17 @@ export const increment = () => {
 
     dispatch({
       type: INCREMENT
+    })
+  }
+}
+
+export const noteChange = (notes) => {
+  //console.log(notes);
+  return dispatch => {
+
+    dispatch({
+      type: 'NOTE_CHANGE',
+      payload: notes
     })
   }
 }
@@ -128,7 +146,7 @@ async function fetchAsync () {
         q: 'twinkle twinkle'
     }
     Object.keys(query).forEach(key => url.searchParams.append(key, query[key]))
-    console.log(url);
+    //console.log(url);
   let response = await fetch(url)
   //let response = await fetch('https://www.googleapis.com/youtube/v3/search?key=AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ')
   // only proceed once promise is resolved

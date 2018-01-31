@@ -10,20 +10,20 @@ import {
   fetchYoutube
 } from '../../modules/counter'
 import Pitch from './pitch'
-//import Charts from './charts'
+import Charts from './charts'
 
 
 class Home extends React.Component {
   render(){
 
-    console.log(this);
+    //console.log(this);
     let props = this.props;
     let videoId;
-    if (this.props.youtube.items) {
-      videoId = `https://www.youtube.com/embed/${this.props.youtube.items[0].id.videoId}`
-    }
-    console.log(this.props.youtube.items);
-    console.log(videoId);
+    //if (this.props.youtube.items) {
+      //videoId = `https://www.youtube.com/embed/${this.props.youtube.items[0].id.videoId}`
+    //}
+    ////console.log(this.props.youtube.items);
+    ////console.log(videoId);
 
     return(
       <div>
@@ -31,6 +31,8 @@ class Home extends React.Component {
         <iframe src={videoId} title='youtube-vid' frameBorder="0" allowFullScreen></iframe>
         <p>Count: {props.count}</p>
         <Pitch />
+
+        <Charts notes = {props.notes}/>
 
         <p>
           <button onClick={props.increment} disabled={props.isIncrementing}>Increment</button>
@@ -54,7 +56,8 @@ const mapStateToProps = state => ({
   count: state.counter.count,
   isIncrementing: state.counter.isIncrementing,
   isDecrementing: state.counter.isDecrementing,
-  youtube: state.counter.payload
+  youtube: state.counter.payload,
+  notes: state.counter.notes
 })
 
 const mapDispatchToProps = dispatch => bindActionCreators({
