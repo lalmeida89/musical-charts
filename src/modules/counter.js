@@ -8,7 +8,10 @@ const initialState = {
   isIncrementing: false,
   isDecrementing: false,
   payload: '',
-  notes: []
+  notes: [],
+  pieNotes: [],
+  songs: [],
+  playingSong: ''
 }
 
 export default (state = initialState, action) => {
@@ -26,6 +29,15 @@ export default (state = initialState, action) => {
       ...state,
       notes : [...action.payload]
     }
+
+    case 'PIE_CHANGE':
+    let pieNotes = constructPie(state,action);
+    console.log(pieNotes)
+    return {
+      ...state,
+      pieNotes: [...pieNotes]
+    }
+
 
     case INCREMENT_REQUESTED:
     return {
@@ -81,6 +93,30 @@ export const noteChange = (notes) => {
   }
 }
 
+let pieData = [];
+
+function constructPie(state, action){
+  console.log(action);
+  for (let i=0; i < pieData.length; i++){
+    if (pieData[i].name === action.payload){
+      pieData[i].value++
+      return pieData;
+    }
+  }
+  pieData.push({name:action.payload, value:1})
+  return pieData;
+}
+
+export const pieChange = (notes) => {
+  return dispatch => {
+
+    dispatch({
+      type: 'PIE_CHANGE',
+      payload: notes
+    })
+  }
+}
+
 export const incrementAsync = () => {
   return dispatch => {
     dispatch({
@@ -96,6 +132,7 @@ export const incrementAsync = () => {
 }
 
 export const fetchYoutube = () => {
+  console.log('hi');
   return dispatch => {
     fetchAsync()
     .then(data => {
@@ -106,6 +143,38 @@ export const fetchYoutube = () => {
     })
     .catch(reason => console.log(reason.message))
   }
+}
+
+async function fetchAsync () {
+  var url = new URL("https://www.googleapis.com/youtube/v3/search"),
+  //var url = new URL('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=UHdgXkkVyl0%2C+Xxsdw6zG1bg&key=AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ'),
+    query = {
+        part: 'snippet',
+        key: 'AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ',
+        maxResults: 6,
+        type: 'video',
+        q: 'twinkle twinkle'
+    }
+    Object.keys(query).forEach(key => url.searchParams.append(key, query[key]))
+    //let url = 'https://api.github.com/users/dhh/repos'
+    //console.log(url);
+  let response = await fetch(url)
+  //let response = await fetch('https://www.googleapis.com/youtube/v3/search?key=AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ')
+  // only proceed once promise is resolved
+  let data = await response.json();
+  console.log(data);
+  // only proceed once second promise is resolved
+  return data;
+}
+
+export const exampleFetch = () => {
+  fetch('https://api.github.com/users/dhh/repos')
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(myJson) {
+    console.log(myJson);
+  });
 }
 
 export const decrement = () => {
@@ -134,23 +203,8 @@ export const decrementAsync = () => {
   }
 }
 
+export const fetchSongs = () => {
+  return dispatch =>{
 
-async function fetchAsync () {
-  var url = new URL("https://www.googleapis.com/youtube/v3/search"),
-  //var url = new URL('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=UHdgXkkVyl0%2C+Xxsdw6zG1bg&key=AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ'),
-    query = {
-        part: 'snippet',
-        key: 'AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ',
-        maxResults: 6,
-        type: 'video',
-        q: 'twinkle twinkle'
-    }
-    Object.keys(query).forEach(key => url.searchParams.append(key, query[key]))
-    //console.log(url);
-  let response = await fetch(url)
-  //let response = await fetch('https://www.googleapis.com/youtube/v3/search?key=AIzaSyA3IHL73MF00WFjgxdwzg57nI1CwW4dybQ')
-  // only proceed once promise is resolved
-  let data = await response.json();
-  // only proceed once second promise is resolved
-  return data;
+  }
 }

@@ -5,7 +5,8 @@ import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 import {
   increment,
-  noteChange
+  noteChange,
+  pieChange
 } from '../../modules/counter'
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -33,63 +34,71 @@ class Pitch extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-    notes : []
+    notes : [],
+    pieNotes: []
     };
     this.togglePlayback = this.togglePlayback.bind(this);
     this.changeNotes = this.changeNotes.bind(this);
   }
-  componentDidMount() {
-    audioContext = new AudioContext();
-    MAX_SIZE = Math.max(4,Math.floor(audioContext.sampleRate/5000));	// corresponds to a 5kHz signal
-    var request = new XMLHttpRequest();
-    //console.log(request);
-    request.open("GET", 'https://dl.dropboxusercontent.com/s/8c9m92u1euqnkaz/GershwinWhiteman-RhapsodyInBluePart1.mp3', true);
-    request.responseType = "arraybuffer";
-    request.onload = function() {
-      audioContext.decodeAudioData(request.response).then(function(buffer) {
-        theBuffer = buffer;
-      })
+  /*componentDidMount() {
+    let juicy = 'http://kolber.github.io/audiojs/demos/mp3/02-juicy-r.mp3'
+    let island = 'http://kolber.github.io/audiojs/demos/mp3/04-islands-is-the-limit.mp3'
+    let songsArray =[juicy, island]
+    //this.pickSong(island);
+  }*/
 
-    }
-    request.send();
+pickSong(url) {
+  console.log(url);
+  audioContext = new AudioContext();
+  MAX_SIZE = Math.max(4,Math.floor(audioContext.sampleRate/5000));	// corresponds to a 5kHz signal
+  var request = new XMLHttpRequest();
+  //request.open("GET", 'https://dl.dropboxusercontent.com/s/8c9m92u1euqnkaz/GershwinWhiteman-RhapsodyInBluePart1.mp3', true);
+  request.open("GET", url, true);
+  request.responseType = "arraybuffer";
+  request.onload = function() {
+    audioContext.decodeAudioData(request.response).then(function(buffer) {
+      theBuffer = buffer;
+    })
 
-    detectorElem = document.getElementById( "detector" );
-    canvasElem = document.getElementById( "output" );
-    DEBUGCANVAS = document.getElementById( "waveform" );
-    if (DEBUGCANVAS) {
-      waveCanvas = DEBUGCANVAS.getContext("2d");
-      waveCanvas.strokeStyle = "black";
-      waveCanvas.lineWidth = 1;
-    }
-    pitchElem = document.getElementById( "pitch" );
-    noteElem = document.getElementById( "note" );
-    detuneElem = document.getElementById( "detune" );
-    detuneAmount = document.getElementById( "detune_amt" );
-
-    detectorElem.ondragenter = function () {
-      this.classList.add("droptarget");
-      return false; };
-      detectorElem.ondragleave = function () { this.classList.remove("droptarget"); return false; };
-      detectorElem.ondrop = function (e) {
-        this.classList.remove("droptarget");
-        e.preventDefault();
-        theBuffer = null;
-
-        var reader = new FileReader();
-        reader.onload = function (event) {
-          audioContext.decodeAudioData( event.target.result, function(buffer) {
-            theBuffer = buffer;
-          }, function(){alert("error loading!");} );
-
-        };
-        reader.onerror = function (event) {
-          alert("Error: " + reader.error );
-        };
-        reader.readAsArrayBuffer(e.dataTransfer.files[0]);
-        return false;
-      };
   }
+  request.send();
 
+  detectorElem = document.getElementById( "detector" );
+  canvasElem = document.getElementById( "output" );
+  DEBUGCANVAS = document.getElementById( "waveform" );
+  if (DEBUGCANVAS) {
+    waveCanvas = DEBUGCANVAS.getContext("2d");
+    waveCanvas.strokeStyle = "black";
+    waveCanvas.lineWidth = 1;
+  }
+  pitchElem = document.getElementById( "pitch" );
+  noteElem = document.getElementById( "note" );
+  detuneElem = document.getElementById( "detune" );
+  detuneAmount = document.getElementById( "detune_amt" );
+
+  detectorElem.ondragenter = function () {
+    this.classList.add("droptarget");
+    return false; };
+    detectorElem.ondragleave = function () { this.classList.remove("droptarget"); return false; };
+    detectorElem.ondrop = function (e) {
+      this.classList.remove("droptarget");
+      e.preventDefault();
+      theBuffer = null;
+
+      var reader = new FileReader();
+      reader.onload = function (event) {
+        audioContext.decodeAudioData( event.target.result, function(buffer) {
+          theBuffer = buffer;
+        }, function(){alert("error loading!");} );
+
+      };
+      reader.onerror = function (event) {
+        alert("Error: " + reader.error );
+      };
+      reader.readAsArrayBuffer(e.dataTransfer.files[0]);
+      return false;
+    };
+}
 
 
       togglePlayback(state) {
@@ -119,6 +128,21 @@ class Pitch extends React.Component {
         isPlaying = true;
         isLiveInput = false;
         updatePitch();
+
+        let pieNotes = this.state.pieNotes;
+        for (let i=0; i < pieNotes.length; i++) {
+          let note = noteFromPitch( pitch ) || 0
+          if  (!(note in pieNotes)) {
+            pieNotes.push({note: note});
+            console.log(pieNotes);
+          }
+          else {
+            console.log(pieNotes);
+          }
+        }
+
+
+
         let notes = this.state.notes;
         let time = 0;
         starter = setInterval(function(){
@@ -127,13 +151,15 @@ class Pitch extends React.Component {
           ////console.log(notes);
           time += 50;
 
-          notes.push({time: time, note: note})
+          notes.push({time: time/100, note: note})
           this.changeNotes(notes);
           this.props.increment();
           this.props.noteChange(notes);
+          this.props.pieChange(noteStrings[note%12]);
           }.bind(this),
            50);
         return "stop";
+
       }
 
       changeNotes(notes) {
@@ -150,7 +176,26 @@ class Pitch extends React.Component {
           if (!window.cancelAnimationFrame)
           window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
           window.cancelAnimationFrame( rafID );
+          //stop playing and return
+          clearInterval(starter)
+          return "start";
         }
+
+        let notes = this.state.notes;
+        let time = 0;
+        starter = setInterval(function(){
+          //this.setState({notes: notes});
+          var note =  noteFromPitch( pitch ) || 0
+          ////console.log(notes);
+          time += 50;
+
+          notes.push({time: time/100, note: note})
+          this.changeNotes(notes);
+          this.props.increment();
+          this.props.noteChange(notes);
+          }.bind(this),
+           50);
+
         getUserMedia(
           {
             "audio": {
@@ -163,6 +208,8 @@ class Pitch extends React.Component {
               "optional": []
             },
           }, gotStream);
+
+          return "stop";
         }
 
         toggleOscillator() {
@@ -202,11 +249,11 @@ class Pitch extends React.Component {
 
             </p>
 
-
-
-            <p>Count: {this.props.count}</p>
-            <button onClick={this.props.increment}>Increment</button>
-
+            <p>
+            <button onClick={() => this.pickSong('http://kolber.github.io/audiojs/demos/mp3/02-juicy-r.mp3')}>Juicy</button>
+            <button onClick={() => this.pickSong('http://kolber.github.io/audiojs/demos/mp3/04-islands-is-the-limit.mp3')}>Island</button>
+            <button onClick={() => this.pickSong('https://dl.dropboxusercontent.com/s/8c9m92u1euqnkaz/GershwinWhiteman-RhapsodyInBluePart1.mp3')}>Old Timey</button>
+            </p>
 
             <div id="detector" className="vague">
             <div className="pitch"><span id="pitch">--</span>Hz</div>
@@ -226,7 +273,8 @@ class Pitch extends React.Component {
 
     const mapDispatchToProps = dispatch => bindActionCreators({
       increment,
-      noteChange
+      noteChange,
+      pieChange
     }, dispatch)
 
     export default connect(
